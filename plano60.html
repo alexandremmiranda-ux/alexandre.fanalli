@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Plano 60 Dias</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--s1:#111;--s2:#191919;--s3:#1f1f1f;
+  --border:#222;--border2:#2d2d2d;
+  --text:#e0e0e0;--muted:#555;--dim:#333;
+  --red:#e84040;--blue:#3b82f6;--green:#10b981;
+  --amber:#f59e0b;--purple:#8b5cf6;--indigo:#6366f1;
+  --font:-apple-system,'Inter',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;max-width:520px;margin:0 auto}
+::-webkit-scrollbar{width:0;height:0}
+
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:14px 16px 10px;position:sticky;top:0;z-index:100}
+.topbar-sub{font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.topbar-title{font-size:15px;font-weight:800}
+.topbar-week{font-size:11px;color:var(--amber);font-weight:600;margin-top:3px}
+
+.nav{background:var(--s1);border-bottom:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);position:sticky;top:67px;z-index:99}
+.nb{background:none;border:none;border-bottom:2px solid transparent;padding:10px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:border-color .15s;width:100%}
+.nb.active{border-bottom-color:var(--red)}
+.nb span:first-child{font-size:13px}
+.nb span:last-child{font-size:8px;letter-spacing:.5px;color:var(--muted);font-weight:400}
+.nb.active span:last-child{color:var(--text);font-weight:700}
+
+.content{padding:13px 12px 50px;display:flex;flex-direction:column;gap:10px}
+.view{display:none;flex-direction:column;gap:10px}
+.view.active{display:flex}
+
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px}
+.sl{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:11px}
+.divider{border:none;border-top:1px solid var(--border);margin:11px 0}
+
+.tag{display:inline-flex;align-items:center;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+
+.prog-wrap{margin-bottom:10px}
+.prog-head{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;color:var(--muted)}
+.prog-track{height:3px;background:var(--border2);border-radius:3px}
+.prog-fill{height:3px;border-radius:3px;transition:width .4s}
+
+.cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;cursor:pointer;position:relative}
+.cb::after{content:'';font-size:12px;font-weight:900}
+.cb.chk-g{background:rgba(16,185,129,.15);border-color:var(--green)}
+.cb.chk-g::after{content:'✓';color:var(--green)}
+.cb.chk-r{background:rgba(232,64,64,.15);border-color:var(--red)}
+.cb.chk-r::after{content:'✓';color:var(--red)}
+.cb.chk-b{background:rgba(59,130,246,.15);border-color:var(--blue)}
+.cb.chk-b::after{content:'✓';color:var(--blue)}
+.cb.chk-a{background:rgba(245,158,11,.15);border-color:var(--amber)}
+.cb.chk-a::after{content:'✓';color:var(--amber)}
+
+.day-tabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px}
+.day-tab{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:9px 13px;cursor:pointer;flex-shrink:0;font-size:11px;font-weight:700;color:var(--muted);transition:all .15s;white-space:nowrap}
+.day-tab.act-r{color:var(--red);border-color:rgba(232,64,64,.4);background:rgba(232,64,64,.08)}
+.day-tab.act-b{color:var(--blue);border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.08)}
+.day-tab.act-a{color:var(--amber);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+.day-tab.act-g{color:var(--green);border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.08)}
+.day-tab.act-p{color:var(--purple);border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.08)}
+
+.meal-row{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:7px}
+.meal-row.done{background:#0e1410;border-color:rgba(16,185,129,.2)}
+.meal-hdr{display:flex;align-items:center;padding:12px 12px;gap:9px;cursor:pointer}
+.meal-time{font-size:10px;color:var(--dim);min-width:34px;flex-shrink:0}
+.meal-name{font-size:13px;font-weight:600;flex:1}
+.meal-name.done{text-decoration:line-through;color:var(--muted)}
+.meal-kcal{font-size:12px;color:var(--amber);font-weight:700;text-align:right}
+.meal-ptn{font-size:10px;color:var(--green);text-align:right}
+.meal-body{padding:0 12px 12px 55px;border-top:1px solid var(--border);padding-top:9px;display:none}
+.meal-body.open{display:block}
+.meal-item{font-size:12px;color:var(--muted);margin-bottom:3px;padding-left:12px;position:relative}
+.meal-item::before{content:'—';position:absolute;left:0;color:var(--dim)}
+
+.ex-row{padding:11px 0;border-bottom:1px solid var(--border)}
+.ex-row:last-child{border-bottom:none;padding-bottom:0}
+.ex-hdr{display:flex;gap:11px;align-items:flex-start}
+.ex-name{font-size:13px;font-weight:600;margin-bottom:5px;cursor:pointer}
+.ex-name.done{text-decoration:line-through;color:var(--muted)}
+.ex-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.ex-note{display:none;padding:8px 10px;border-radius:7px;font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px}
+.ex-note.open{display:block}
+.ex-toggle{font-size:10px;color:var(--muted);cursor:pointer;display:inline-block}
+
+.w-row{display:flex;align-items:center;gap:7px;margin-top:7px;flex-wrap:wrap}
+.w-inp{background:var(--s2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:5px 8px;width:72px;outline:none;font-family:var(--font)}
+.w-inp:focus{border-color:var(--red)}
+.w-hist{font-size:10px;color:var(--muted)}
+.w-chart{display:flex;align-items:flex-end;gap:2px;height:32px;margin-top:5px}
+.w-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1}
+.w-bar{width:100%;background:rgba(232,64,64,.3);border-radius:2px 2px 0 0;min-height:2px}
+.w-bar-label{font-size:7px;color:var(--muted)}
+
+.inp{background:var(--s2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:9px 11px;width:100%;outline:none;font-family:var(--font);transition:border-color .15s}
+.inp:focus{border-color:var(--blue)}
+.inp-lbl{font-size:11px;color:var(--muted);margin-bottom:5px;display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+
+.btn{background:var(--red);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:10px 16px;cursor:pointer;font-family:var(--font);width:100%;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn.sec{background:var(--s2);color:var(--muted);border:1px solid var(--border)}
+
+.stat-box{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-val{font-size:20px;font-weight:800}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+
+.h-chart{display:flex;align-items:flex-end;gap:3px;height:70px}
+.h-bar-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.h-bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;transition:height .4s}
+.h-bar-lbl{font-size:7px;color:var(--muted)}
+.h-bar-val{font-size:8px}
+
+.conv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.conv-tab{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:5px 11px;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;letter-spacing:.5px;text-transform:uppercase;transition:all .15s}
+.conv-tab.active{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.4);color:var(--blue)}
+
+.ctable{width:100%;border-collapse:collapse;font-size:11px}
+.ctable th{text-align:left;color:var(--muted);padding:7px 7px;border-bottom:1px solid var(--border);font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.ctable td{padding:8px 7px;border-bottom:1px solid var(--border);color:var(--muted);vertical-align:top;line-height:1.4}
+.ctable td:first-child{color:var(--text);font-weight:600}
+.ctable tr:last-child td{border-bottom:none}
+
+.week-banner{border-radius:10px;padding:12px 14px;border:1px solid}
+.alert{border-radius:8px;padding:10px 12px;font-size:11px;line-height:1.6}
+
+.weight-section{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-sub">Plano de transformação · 60 dias</div>
+  <div class="topbar-title">Recomposição Corporal</div>
+  <div class="topbar-week" id="week-banner-top">Calculando semana...</div>
+</div>
+
+<nav class="nav">
+  <button class="nb active" onclick="showView('overview',this)"><span>◎</span><span>Visão</span></button>
+  <button class="nb" onclick="showView('training',this)"><span>⚡</span><span>Treino</span></button>
+  <button class="nb" onclick="showView('diet',this)"><span>🥗</span><span>Dieta</span></button>
+  <button class="nb" onclick="showView('health',this)"><span>❤️</span><span>Health</span></button>
+  <button class="nb" onclick="showView('conv',this)"><span>⇄</span><span>Conversões</span></button>
+</nav>
+
+<div class="content">
+
+<!-- ══════════════════════ VISÃO GERAL -->
+<div id="view-overview" class="view active">
+  <div id="ov-week-card"></div>
+  <div class="card">
+    <div class="sl">Metas diárias</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:600">Calorias</div><div style="font-size:10px;color:var(--muted);margin-top:2px">TDEE 2650 − déficit 400</div></div>
+      <div style="font-size:18px;font-weight:800;color:var(--amber)">2250 kcal</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:600">Proteína</div><div style="font-size:10px;color:var(--muted);margin-top:2px">~1,8g/kg pela logística</div></div>
+      <div style="font-size:18px;font-weight:800;color:var(--green)">155g</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:600">Carboidratos</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Energia para treino</div></div>
+      <div style="font-size:18px;font-weight:800;color:var(--blue)">230g</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:13px;font-weight:600">Gordura</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Azeite + gordura natural</div></div>
+      <div style="font-size:18px;font-weight:800;color:var(--purple)">65g</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sl">Receita base — Patê de frango · Rende 4 dias · 15min</div>
+    <div id="pate-steps"></div>
+    <div class="alert" style="background:rgba(232,64,64,.08);border:1px solid rgba(232,64,64,.2);color:var(--red);margin:8px 0 13px">
+      Não use requeijão — gordura não contabilizada nos macros, compromete o déficit.
+    </div>
+    <div class="sl">Quantidade por uso</div>
+    <table class="ctable">
+      <tr><th>Uso</th><th>Qtd</th><th>Ptn</th></tr>
+      <tr><td>Café (com 2 ovos)</td><td>2 col. sopa</td><td style="color:var(--green)">~16g</td></tr>
+      <tr><td>Pré / Pós-treino</td><td>2 col. sopa</td><td style="color:var(--green)">~16g</td></tr>
+      <tr><td>Lanche noturno (sem ovo)</td><td>3 col. sopa</td><td style="color:var(--green)">~24g</td></tr>
+    </table>
+  </div>
+
+  <div class="weight-section">
+    <div class="sl">Evolução de peso corporal</div>
+    <div id="weight-chart-wrap" style="margin-bottom:12px"></div>
+    <div class="grid2" style="gap:8px;margin-bottom:10px">
+      <div><label class="inp-lbl">Data</label><input class="inp" id="bw-date" type="date"></div>
+      <div><label class="inp-lbl">Peso (kg)</label><input class="inp" id="bw-val" type="number" step="0.1" placeholder="ex: 84.5"></div>
+    </div>
+    <button class="btn" onclick="saveBodyWeight()">Registrar peso</button>
+  </div>
+</div>
+
+<!-- ══════════════════════ TREINO -->
+<div id="view-training" class="view">
+  <div id="week-params-banner"></div>
+  <div class="day-tabs" id="train-tabs"></div>
+  <div class="card" id="train-progress" style="padding:12px 14px"></div>
+  <div id="train-cardio"></div>
+  <div class="card" id="train-ex"></div>
+  <div style="background:var(--s1);border:1px solid rgba(99,102,241,.25);border-left:3px solid var(--indigo);border-radius:10px;padding:12px 13px">
+    <div style="font-size:11px;font-weight:700;color:var(--indigo);margin-bottom:3px">Regra de progressão</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5" id="prog-rule-text"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ DIETA -->
+<div id="view-diet" class="view">
+  <div class="day-tabs" id="diet-tabs"></div>
+  <div id="diet-macros"></div>
+  <div id="diet-meals"></div>
+  <div style="background:var(--s1);border:1px solid rgba(99,102,241,.25);border-left:3px solid var(--indigo);border-radius:10px;padding:12px 13px" id="diet-prep"></div>
+</div>
+
+<!-- ══════════════════════ APPLE HEALTH -->
+<div id="view-health" class="view">
+  <div class="card">
+    <div class="sl">Registrar treino</div>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="btn sec" id="h-type-forca" onclick="setHealthType('forca')" style="font-size:11px;padding:7px 10px">💪 Força</button>
+      <button class="btn sec" id="h-type-cardio" onclick="setHealthType('cardio')" style="font-size:11px;padding:7px 10px">🏃 Cardio</button>
+    </div>
+    <div class="grid3" style="gap:8px;margin-bottom:8px">
+      <div><label class="inp-lbl">Calorias</label><input class="inp" id="h-kcal" type="number" placeholder="kcal"></div>
+      <div><label class="inp-lbl">Duração (min)</label><input class="inp" id="h-dur" type="number" placeholder="min"></div>
+      <div><label class="inp-lbl">FC máx (bpm)</label><input class="inp" id="h-fcmax" type="number" placeholder="bpm"></div>
+    </div>
+    <div class="grid2" style="gap:8px;margin-bottom:10px">
+      <div><label class="inp-lbl">Data (padrão: hoje)</label><input class="inp" id="h-date" type="date"></div>
+      <div><label class="inp-lbl">Obs. (opcional)</label><input class="inp" id="h-note" type="text" placeholder="nota rápida"></div>
+    </div>
+    <button class="btn" onclick="saveHealth()">Salvar registro</button>
+  </div>
+
+  <div class="card" id="health-summary" style="display:none">
+    <div class="sl">Últimos 14 dias</div>
+    <div id="health-list"></div>
+  </div>
+
+  <div class="card" id="health-charts" style="display:none">
+    <div class="sl">Calorias queimadas por treino</div>
+    <div style="margin-bottom:6px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Força</div>
+      <div class="h-chart" id="chart-forca"></div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Cardio</div>
+      <div class="h-chart" id="chart-cardio"></div>
+    </div>
+  </div>
+
+  <div class="card" id="health-stats" style="display:none">
+    <div class="sl">Médias acumuladas</div>
+    <div class="grid3" id="health-avg"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ CONVERSÕES -->
+<div id="view-conv" class="view">
+  <div class="card">
+    <div class="sl">Tabela de substituição</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:13px;line-height:1.5">Quantidades equivalentes ao padrão do plano. Pese sempre o alimento cozido.</p>
+    <div class="conv-tabs">
+      <div class="conv-tab active" onclick="showConv('carb',this)">Carboidratos</div>
+      <div class="conv-tab" onclick="showConv('ptn',this)">Proteínas</div>
+      <div class="conv-tab" onclick="showConv('social',this)">Controle social</div>
+    </div>
+    <div id="conv-carb">
+      <table class="ctable">
+        <tr><th>Alimento</th><th>Qtd</th><th>Kcal</th><th>Carb</th></tr>
+        <tr><td>Arroz branco cozido</td><td>150g</td><td>195</td><td>43g</td></tr>
+        <tr><td>Macarrão cozido</td><td>200g</td><td>260</td><td>52g</td></tr>
+        <tr><td>Batata doce cozida</td><td>200g</td><td>172</td><td>40g</td></tr>
+        <tr><td>Batata inglesa cozida</td><td>230g</td><td>196</td><td>45g</td></tr>
+        <tr><td>Mandioca cozida</td><td>130g</td><td>195</td><td>47g</td></tr>
+        <tr><td>Inhame cozido</td><td>180g</td><td>198</td><td>47g</td></tr>
+        <tr><td>Pão francês s/ miolo</td><td>1,5 un.</td><td>190</td><td>38g</td></tr>
+        <tr><td>Pão de forma integral</td><td>3 fatias</td><td>198</td><td>39g</td></tr>
+        <tr><td>Cuscuz de milho cozido</td><td>160g</td><td>194</td><td>42g</td></tr>
+        <tr><td>Aveia em flocos (seco)</td><td>55g</td><td>198</td><td>35g</td></tr>
+        <tr><td>Banana prata</td><td>2 médias</td><td>180</td><td>46g</td></tr>
+        <tr><td>Feijão cozido</td><td>180g</td><td>200</td><td>36g</td></tr>
+        <tr><td>Lentilha cozida</td><td>160g</td><td>192</td><td>33g</td></tr>
+      </table>
+    </div>
+    <div id="conv-ptn" style="display:none">
+      <table class="ctable">
+        <tr><th>Alimento</th><th>Qtd</th><th>Kcal</th><th>Ptn</th></tr>
+        <tr><td>Peito de frango grelhado</td><td>180g</td><td>198</td><td>42g</td></tr>
+        <tr><td>Carne moída (patinho)</td><td>180g</td><td>270</td><td>40g</td></tr>
+        <tr><td>Ovos fritos (azeite mín.)</td><td>4 ovos</td><td>300</td><td>28g</td></tr>
+        <tr><td>Ovos cozidos</td><td>4 ovos</td><td>248</td><td>28g</td></tr>
+        <tr><td>Claras cozidas</td><td>8 claras</td><td>136</td><td>28g</td></tr>
+        <tr><td>Atum em lata (água)</td><td>130g</td><td>143</td><td>30g</td></tr>
+        <tr><td>Sardinha em lata (água)</td><td>120g</td><td>168</td><td>28g</td></tr>
+        <tr><td>Tilápia grelhada</td><td>200g</td><td>210</td><td>40g</td></tr>
+        <tr><td>Alcatra grelhada</td><td>160g</td><td>280</td><td>38g</td></tr>
+        <tr><td>Patinho (bife)</td><td>170g</td><td>255</td><td>40g</td></tr>
+        <tr><td>Peito de peru fatiado</td><td>180g</td><td>198</td><td>38g</td></tr>
+        <tr><td>Queijo cottage</td><td>250g</td><td>210</td><td>30g</td></tr>
+        <tr><td>Iogurte grego s/ açúcar</td><td>280g</td><td>280</td><td>28g</td></tr>
+      </table>
+    </div>
+    <div id="conv-social" style="display:none">
+      <div class="alert" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--amber);margin-bottom:12px">
+        Controle de dano — não de perfeição. Um evento bem navegado vale mais que evitar todos.
+      </div>
+      <table class="ctable">
+        <tr><th>Situação</th><th>Priorize</th><th>Evite</th></tr>
+        <tr><td>Churrasco</td><td>Frango na brasa, alcatra, picanha s/ excesso de gordura. Salada s/ molho pesado.</td><td>Linguiça, costela, pão de alho, maionese.</td></tr>
+        <tr><td>Aniversário</td><td>Proteína primeiro. Um pedaço de bolo — não dois.</td><td>Salgadinho em quantidade, refrigerante com açúcar, repetir sobremesa.</td></tr>
+        <tr><td>Restaurante</td><td>Prato com proteína visível. Arroz e salada como acompanhamento.</td><td>Fritos como prato principal, molhos cremosos, batata frita em porção.</td></tr>
+        <tr><td>Bar</td><td>2–3 espetinhos de frango/carne na brasa. Coca zero.</td><td>Batata/mandioca frita, asinha frita, queijo coalho na manteiga.</td></tr>
+        <tr><td>Lanchonete</td><td>Wrap de frango grelhado, salada com proteína.</td><td>Combo com batata grande, molho extra, sobremesa.</td></tr>
+        <tr><td>Pizza</td><td>2 fatias máx., prefira cobertura proteica (frango, atum).</td><td>Mais de 2 fatias, borda recheada, refrigerante com açúcar.</td></tr>
+        <tr><td>Dia após excesso</td><td>Volta ao protocolo normalmente. Não pule refeição.</td><td>Compensar com restrição — piora o déficit proteico.</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+<script>
+// ════════════════════════════════════════════════ CONSTANTS
+
+const START_DATE = new Date('2026-06-15');
+
+const WEEK_PARAMS = [
+  { weeks:[1,2], label:'Semana 1–2', focus:'Adaptação', color:'red',
+    compRest:'90s', isoRest:'60s', compSets:'+0', note:'Foco em técnica. Aumente carga apenas quando completar todas as reps com facilidade.' },
+  { weeks:[3,4], label:'Semana 3–4', focus:'Progressão', color:'amber',
+    compRest:'90s', isoRest:'60s', compSets:'+0', note:'Aumente carga em ao menos 1 composto por treino. Se não aumentou nada, o treino foi fácil demais.' },
+  { weeks:[5,6], label:'Semana 5–6', focus:'Intensidade', color:'green',
+    compRest:'75s', isoRest:'45s', compSets:'+0', note:'Descanso reduzido. Mesma carga, mais exigência metabólica. Vai doer diferente.' },
+  { weeks:[7,8], label:'Semana 7–8', focus:'Consolidação', color:'blue',
+    compRest:'75s', isoRest:'45s', compSets:'+1', note:'+1 série nos compostos principais. Aproxime da falha nos isolados na última série.' },
+];
+
+const TRAINING_DAYS = [
+  { day:'Seg', label:'Inferior A', color:'red', type:'HIIT',
+    cardio:'HIIT 20min: 2min aquec. → 8× [30s a 12km/h + 90s a 6km/h] → 2min desacel.',
+    exercises:[
+      {name:'Leg press 45°', type:'comp', sets:4, reps:'10–12', note:'Pés na largura dos ombros. Desça até 90° no joelho. Principal composto do dia.'},
+      {name:'Hack squat (máquina)', type:'comp', sets:3, reps:'10', note:'Costas apoiadas. Joelhos na linha dos pés.'},
+      {name:'Cadeira extensora', type:'iso', sets:3, reps:'12', note:'Isolado de quadríceps. Pode ir até falha na última série.'},
+      {name:'Mesa flexora deitada', type:'iso', sets:3, reps:'12', note:'Posterior de coxa. Controle a descida.'},
+      {name:'Elevação pélvica no Smith', type:'comp', sets:3, reps:'12', note:'Costas no banco, barra sobre o quadril com proteção. Squeeze no topo por 1s.'},
+      {name:'Panturrilha no aparelho (em pé)', type:'iso', sets:3, reps:'15', note:''},
+    ]},
+  { day:'Ter', label:'Superior A', color:'blue', type:'Cardio leve',
+    cardio:'Esteira 25min a 6,5–7 km/h constante.',
+    exercises:[
+      {name:'Supino no Smith / máquina convergente', type:'comp', sets:4, reps:'8–10', note:'Composto principal. Máquina convergente é ideal.'},
+      {name:'Crossover no cabo — altura do ombro', type:'iso', sets:3, reps:'12', note:'Feche os cotovelos na frente, não os punhos.'},
+      {name:'Peck deck (borboleta)', type:'iso', sets:3, reps:'12', note:''},
+      {name:'Tríceps polia (corda)', type:'iso', sets:3, reps:'12', note:'Abra a corda no final do movimento.'},
+      {name:'Tríceps testa no cabo', type:'iso', sets:3, reps:'10', note:'Barra reta ou EZ no cabo baixo. Cotovelos fixos.'},
+      {name:'Dip na máquina (graviton)', type:'comp', sets:3, reps:'10–12', note:'Use contrapeso confortável.'},
+    ]},
+  { day:'Qua', label:'Inferior B', color:'red', type:'HIIT',
+    cardio:'HIIT 20min: mesmo protocolo de segunda.',
+    exercises:[
+      {name:'Cadeira flexora sentada', type:'comp', sets:4, reps:'10', note:'Prefira sentada à deitada — maior amplitude.'},
+      {name:'Elevação pélvica no Smith', type:'comp', sets:4, reps:'10', note:'Composto principal do dia. Carga maior que segunda.'},
+      {name:'Stiff no Smith', type:'comp', sets:3, reps:'12', note:'Leve flexão no joelho. Desça controlado sentindo o posterior alongar.'},
+      {name:'Adutora (máquina)', type:'iso', sets:3, reps:'15', note:'Movimento lento — não use momentum.'},
+      {name:'Panturrilha sentado (máquina)', type:'iso', sets:3, reps:'15', note:'Sóleo — músculo diferente da panturrilha em pé.'},
+      {name:'Abdominal na máquina', type:'iso', sets:3, reps:'15', note:''},
+    ]},
+  { day:'Qui', label:'Superior B', color:'blue', type:'Cardio leve',
+    cardio:'Esteira 25min a 6,5–7 km/h constante.',
+    exercises:[
+      {name:'Puxada frontal (pulley)', type:'comp', sets:4, reps:'10', note:'Cotovelo para baixo e para trás. Composto principal.'},
+      {name:'Remada sentada no cabo', type:'comp', sets:3, reps:'10', note:'Triângulo ou barra paralela. Não balance o tronco.'},
+      {name:'Remada máquina (chest supported)', type:'iso', sets:3, reps:'10', note:'Peito apoiado elimina compensação lombar.'},
+      {name:'Rosca direta no cabo', type:'iso', sets:3, reps:'12', note:'Cabo mantém tensão constante.'},
+      {name:'Rosca martelo na polia (corda)', type:'iso', sets:3, reps:'10', note:'Corda no cabo baixo, pegada neutra.'},
+      {name:'Face pull no cabo', type:'iso', sets:3, reps:'15', note:'Saúde do manguito rotador. Nunca pule.'},
+    ]},
+  { day:'Sex', label:'Extra c/ namorada', color:'purple', type:'Cardio leve', extra:true,
+    cardio:'Caminhada ou esteira leve 20min juntos — ritmo de conversa.',
+    exercises:[
+      {name:'Leg press 45°', type:'comp', sets:3, reps:'12', note:'Versão mais leve. Foco em técnica.'},
+      {name:'Cadeira extensora', type:'iso', sets:3, reps:'12', note:''},
+      {name:'Elevação pélvica no Smith', type:'comp', sets:3, reps:'12', note:''},
+      {name:'Mesa flexora deitada', type:'iso', sets:3, reps:'12', note:''},
+      {name:'Adutora (máquina)', type:'iso', sets:3, reps:'15', note:''},
+      {name:'Panturrilha no aparelho', type:'iso', sets:3, reps:'15', note:''},
+    ]},
+];
+
+const DIET_DAYS = [
+  { day:'Seg', tag:'Inferior A + HIIT', type:'treino',
+    meals:[
+      {time:'08:00',name:'1ª refeição',kcal:370,ptn:28,items:['2 ovos fritos no azeite (frigideira quente, 3–4ml)','1 pão francês com patê de frango — 2 col. sopa cheias']},
+      {time:'11:00',name:'Almoço — marmita',kcal:530,ptn:44,items:['150g arroz cozido','180g frango grelhado','Legume refogado no azeite']},
+      {time:'13:30',name:'Pré-treino',kcal:200,ptn:12,items:['1 banana','1 pão francês com patê — 2 col. sopa']},
+      {time:'17:00',name:'Pós-treino',kcal:180,ptn:14,items:['1 pão francês com carne moída ou patê — 2 col. sopa']},
+      {time:'20:00',name:'Lanche noturno — faculdade',kcal:200,ptn:16,items:['1 pão francês com patê — 3 col. sopa','Maçã ou pera']},
+      {time:'22:30',name:'Jantar',kcal:440,ptn:42,items:['180g frango grelhado','150g batata doce cozida','Salada verde à vontade']},
+    ], prep:'Prepare patê em lote (rende 3 dias). Cozinhe frango e arroz para a semana. Monte marmita de terça.'},
+  { day:'Ter', tag:'Superior A + Cardio leve', type:'treino',
+    meals:[
+      {time:'08:00',name:'1ª refeição',kcal:370,ptn:28,items:['2 ovos fritos no azeite','1 pão francês com patê — 2 col. sopa']},
+      {time:'11:00',name:'Almoço — marmita',kcal:530,ptn:44,items:['150g arroz','180g frango grelhado','Legume refogado']},
+      {time:'13:30',name:'Pré-treino',kcal:200,ptn:12,items:['1 banana','1 pão francês com patê — 2 col. sopa']},
+      {time:'17:00',name:'Pós-treino',kcal:180,ptn:14,items:['1 pão francês com carne moída temperada']},
+      {time:'20:00',name:'Lanche noturno — faculdade',kcal:200,ptn:16,items:['1 pão francês com patê — 3 col. sopa','Maçã ou pera']},
+      {time:'22:30',name:'Jantar',kcal:440,ptn:44,items:['180g carne moída grelhada (sem óleo extra)','150g arroz','Salada']},
+    ], prep:'Monte marmita de quarta. Cozinhe batata doce. Verifique estoque de patê.'},
+  { day:'Qua', tag:'Inferior B + HIIT', type:'treino',
+    meals:[
+      {time:'08:00',name:'1ª refeição',kcal:370,ptn:28,items:['2 ovos fritos no azeite','1 pão francês com patê — 2 col. sopa']},
+      {time:'11:00',name:'Almoço — marmita',kcal:530,ptn:44,items:['150g arroz','180g frango grelhado','Legume']},
+      {time:'13:30',name:'Pré-treino',kcal:200,ptn:12,items:['1 banana','1 pão francês com carne moída temperada']},
+      {time:'17:00',name:'Pós-treino',kcal:180,ptn:14,items:['1 pão francês com patê — 2 col. sopa']},
+      {time:'20:00',name:'Lanche noturno — faculdade',kcal:200,ptn:16,items:['1 pão francês com patê — 3 col. sopa','Maçã ou pera']},
+      {time:'22:30',name:'Jantar',kcal:440,ptn:42,items:['180g frango grelhado','150g batata doce','Salada']},
+    ], prep:'Monte marmita de quinta. Grelhe carne moída. Prepare novo lote de patê se necessário.'},
+  { day:'Qui', tag:'Superior B + Cardio leve', type:'treino',
+    meals:[
+      {time:'08:00',name:'1ª refeição',kcal:370,ptn:28,items:['2 ovos fritos no azeite','1 pão francês com carne moída temperada']},
+      {time:'11:00',name:'Almoço — marmita',kcal:530,ptn:44,items:['150g arroz','180g carne moída grelhada','Legume']},
+      {time:'13:30',name:'Pré-treino',kcal:200,ptn:12,items:['1 banana','1 pão francês com patê — 2 col. sopa']},
+      {time:'17:00',name:'Pós-treino',kcal:180,ptn:14,items:['1 pão francês com patê — 2 col. sopa']},
+      {time:'20:00',name:'Lanche noturno — faculdade',kcal:200,ptn:16,items:['1 pão francês com patê — 3 col. sopa','Maçã ou pera']},
+      {time:'22:30',name:'Jantar',kcal:440,ptn:42,items:['180g frango grelhado','150g arroz','Salada']},
+    ], prep:'Último treino da semana. Prepare lote para fim de semana se quiser.'},
+  { day:'Sex', tag:'Treino extra opcional', type:'livre', note:'Sexta é transição. Priorize proteína mas sem contar calorias.',
+    meals:[
+      {time:'08:00',name:'Café da manhã',kcal:400,ptn:24,items:['2 ovos fritos','1 pão francês com proteína (livre)']},
+      {time:'13:00',name:'Almoço',kcal:600,ptn:40,items:['Proteína de preferência','Arroz e feijão ou batata','Salada']},
+      {time:'20:00',name:'Jantar',kcal:500,ptn:35,items:['Refeição livre — priorize proteína no prato']},
+    ], prep:'Nenhum preparo obrigatório.'},
+  { day:'Sáb', tag:'Liberdade total', type:'livre', note:'Liberdade total não significa comer o máximo possível. Significa comer sem culpa e sem contar.',
+    meals:[
+      {time:'09:00',name:'Café da manhã',kcal:null,ptn:null,items:['Livre — se tiver proteína disponível, priorize','Não pule achando que compensa mais tarde']},
+      {time:'13:00',name:'Almoço',kcal:null,ptn:null,items:['Livre — churrasco, restaurante, o que for','Coloque proteína no prato antes de qualquer outra coisa']},
+      {time:'19:00',name:'Jantar / Evento',kcal:null,ptn:null,items:['Livre — sem culpa','O estrago de um sábado não desfaz a semana']},
+    ], prep:'Nenhum.'},
+  { day:'Dom', tag:'Retomada — volta ao protocolo', type:'retomada', note:'Domingo à noite é onde o plano da semana se ganha ou se perde.',
+    meals:[
+      {time:'09:00',name:'Café da manhã',kcal:370,ptn:28,items:['2 ovos fritos no azeite','1 pão francês com patê de frango','Retoma o padrão da semana']},
+      {time:'13:00',name:'Almoço',kcal:580,ptn:46,items:['150g arroz','200g frango ou carne grelhada','Legume ou salada']},
+      {time:'20:00',name:'Jantar',kcal:440,ptn:42,items:['180g frango grelhado','150g batata doce ou arroz','Salada verde']},
+    ], prep:'Prepare patê e carne moída para a semana toda. Cozinhe arroz. Monte marmita de segunda. Esta é a hora mais importante da semana.'},
+];
+
+const PATE_STEPS = [
+  'Cozinhe 400g de peito de frango em água com sal, alho em pó e louro (~15min).',
+  'Escorra bem e desfie ainda quente com dois garfos — quanto mais fino, melhor.',
+  'Adicione 1 colher de chá de azeite e misture enquanto ainda morno.',
+  'Tempere com sal, pimenta-do-reino, alho em pó e salsinha seca a gosto.',
+  'Guarde em pote fechado na geladeira por até 4 dias.',
+  'Use direto no pão frio — não precisa aquecer.',
+];
+
+// Histórico pré-carregado das semanas 1 e 2
+const PRESET_HEALTH = [
+  {d:'2026-06-16',type:'forca',kcal:140,dur:29,fcmax:0,note:'Sem 1 · Inferior A'},
+  {d:'2026-06-16',type:'cardio',kcal:200,dur:21,fcmax:183,note:'HIIT · 2,2km'},
+  {d:'2026-06-17',type:'forca',kcal:136,dur:35,fcmax:0,note:'Sem 1 · Superior A'},
+  {d:'2026-06-17',type:'cardio',kcal:151,dur:26,fcmax:138,note:'Cardio leve · 2,1km'},
+];
+
+// ════════════════════════════════════════════════ STORAGE
+
+function save(k,v){try{localStorage.setItem('p60_'+k,JSON.stringify(v))}catch(e){}}
+function load(k,d){try{const v=localStorage.getItem('p60_'+k);return v!=null?JSON.parse(v):d}catch(e){return d}}
+
+// ════════════════════════════════════════════════ WEEK CALC
+
+function getCurrentWeek(){
+  const now = new Date();
+  const diff = Math.floor((now - START_DATE)/(1000*60*60*24*7));
+  return Math.min(Math.max(diff+1, 1), 8);
+}
+
+function getWeekParams(week){
+  return WEEK_PARAMS.find(p=>p.weeks.includes(week)) || WEEK_PARAMS[0];
+}
+
+function getEffectiveSets(ex, params){
+  if(ex.type==='comp' && params.compSets==='+1') return ex.sets+1;
+  return ex.sets;
+}
+
+function getEffectiveRest(ex, params){
+  if(ex.type==='comp') return params.compRest;
+  return params.isoRest;
+}
+
+// ════════════════════════════════════════════════ NAV
+
+function showView(id, btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ════════════════════════════════════════════════ OVERVIEW
+
+let activeBWChart = [];
+
+function buildOverview(){
+  // Pate steps
+  const el = document.getElementById('pate-steps');
+  el.innerHTML = PATE_STEPS.map((s,i)=>`
+    <div style="display:flex;gap:9px;margin-bottom:8px">
+      <div style="min-width:20px;height:20px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0">${i+1}</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5;padding-top:2px">${s}</div>
+    </div>`).join('');
+
+  // Week banner
+  const week = getCurrentWeek();
+  const wp = getWeekParams(week);
+  const colorMap = {red:'232,64,64',amber:'245,158,11',green:'16,185,129',blue:'59,130,246'};
+  const rgb = colorMap[wp.color];
+  document.getElementById('week-banner-top').textContent = `Semana ${week} de 8 — ${wp.focus}`;
+  document.getElementById('ov-week-card').innerHTML = `
+    <div style="background:rgba(${rgb},.08);border:1px solid rgba(${rgb},.25);border-left:3px solid var(--${wp.color});border-radius:10px;padding:12px 14px">
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--${wp.color});margin-bottom:4px">${wp.label} · ${wp.focus}</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">${wp.note}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <span class="tag" style="background:rgba(${rgb},.1);border:1px solid rgba(${rgb},.25);color:var(--${wp.color})">Compostos: ${wp.compRest}</span>
+        <span class="tag" style="background:rgba(${rgb},.1);border:1px solid rgba(${rgb},.25);color:var(--${wp.color})">Isolados: ${wp.isoRest}</span>
+        ${wp.compSets==='+1'?`<span class="tag" style="background:rgba(${rgb},.1);border:1px solid rgba(${rgb},.25);color:var(--${wp.color})">+1 série nos compostos</span>`:''}
+      </div>
+    </div>`;
+
+  // Body weight
+  const bwDate = document.getElementById('bw-date');
+  if(bwDate) bwDate.value = new Date().toISOString().slice(0,10);
+  renderBWChart();
+}
+
+function saveBodyWeight(){
+  const d = document.getElementById('bw-date').value;
+  const v = parseFloat(document.getElementById('bw-val').value);
+  if(!d||isNaN(v)) return;
+  const hist = load('bw_hist',[]);
+  const idx = hist.findIndex(h=>h.d===d);
+  if(idx>=0) hist[idx].v=v; else hist.push({d,v});
+  hist.sort((a,b)=>a.d.localeCompare(b.d));
+  save('bw_hist',hist);
+  document.getElementById('bw-val').value='';
+  renderBWChart();
+}
+
+function renderBWChart(){
+  const hist = load('bw_hist',[]);
+  const wrap = document.getElementById('weight-chart-wrap');
+  if(!hist.length){
+    wrap.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0">Nenhum peso registrado ainda. Registre ao fim de cada semana.</div>';
+    return;
+  }
+  const min = Math.min(...hist.map(h=>h.v))-1;
+  const max = Math.max(...hist.map(h=>h.v))+1;
+  const bars = hist.map(h=>{
+    const pct = Math.round((h.v-min)/(max-min)*100)||5;
+    return `<div class="h-bar-w">
+      <div class="h-bar-val" style="color:var(--blue);font-size:9px">${h.v}</div>
+      <div class="h-bar" style="height:${pct}%;background:rgba(59,130,246,.35)"></div>
+      <div class="h-bar-lbl">${h.d.slice(5)}</div>
+    </div>`;
+  }).join('');
+  const latest = hist[hist.length-1];
+  const first = hist[0];
+  const diff = (latest.v - first.v).toFixed(1);
+  const diffColor = diff<=0?'var(--green)':'var(--red)';
+  wrap.innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div class="stat-box" style="flex:1"><div class="stat-val" style="color:var(--blue)">${latest.v}<span style="font-size:12px;color:var(--muted)">kg</span></div><div class="stat-lbl">Peso atual</div></div>
+      <div class="stat-box" style="flex:1"><div class="stat-val" style="color:${diffColor}">${diff>0?'+':''}${diff}<span style="font-size:12px;color:var(--muted)">kg</span></div><div class="stat-lbl">Variação total</div></div>
+    </div>
+    <div class="h-chart" style="height:80px">${bars}</div>`;
+}
+
+// ════════════════════════════════════════════════ TRAINING
+
+let activeTrainDay = 0;
+
+function buildTrainTabs(){
+  const tabs = document.getElementById('train-tabs');
+  tabs.innerHTML = '';
+  const actMap = {red:'act-r',blue:'act-b',purple:'act-p'};
+  TRAINING_DAYS.forEach((d,i)=>{
+    const btn = document.createElement('button');
+    const actClass = actMap[d.color]||'act-r';
+    btn.className = 'day-tab'+(i===activeTrainDay?' '+actClass:'');
+    btn.innerHTML = d.day+(d.extra?' <span style="font-size:8px;opacity:.7">(extra)</span>':'');
+    btn.onclick = ()=>{ activeTrainDay=i; renderTraining(); };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderTraining(){
+  buildTrainTabs();
+  const td = TRAINING_DAYS[activeTrainDay];
+  const week = getCurrentWeek();
+  const wp = getWeekParams(week);
+  const colorMap = {red:'232,64,64',blue:'59,130,246',purple:'139,92,246'};
+  const rgb = colorMap[td.color]||'232,64,64';
+  const dateKey = new Date().toISOString().slice(0,10);
+  const checks = load(`tc_${activeTrainDay}_${dateKey}`,{});
+  const weights = load(`tw_${activeTrainDay}`,{});
+
+  // Week params banner
+  document.getElementById('week-params-banner').innerHTML = `
+    <div style="background:rgba(${colorMap[wp.color]||'245,158,11'},.08);border:1px solid rgba(${colorMap[wp.color]||'245,158,11'},.2);border-radius:10px;padding:10px 13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:var(--${wp.color})">Sem ${week} · ${wp.focus}</span>
+      <span class="tag" style="background:rgba(${colorMap[wp.color]||'245,158,11'},.1);border:1px solid rgba(${colorMap[wp.color]||'245,158,11'},.25);color:var(--${wp.color})">Comp: ${wp.compRest}</span>
+      <span class="tag" style="background:rgba(${colorMap[wp.color]||'245,158,11'},.1);border:1px solid rgba(${colorMap[wp.color]||'245,158,11'},.25);color:var(--${wp.color})">Iso: ${wp.isoRest}</span>
+    </div>`;
+
+  // Progress
+  const total = td.exercises.length+1;
+  const done = (checks.cardio?1:0)+td.exercises.filter((_,i)=>checks['e'+i]).length;
+  const pct = Math.round(done/total*100);
+  document.getElementById('train-progress').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:11px;color:var(--muted)">Progresso</span>
+      <span style="font-size:13px;font-weight:800;color:${done===total?'var(--green)':'var(--text)'}">${done}/${total}</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${done===total?'var(--green)':'var(--'+td.color+')'}"></div></div>
+    ${done===total?'<div style="font-size:11px;color:var(--green);margin-top:6px;font-weight:600">✓ Treino completo</div>':''}`;
+
+  // Cardio
+  const cc = checks.cardio;
+  document.getElementById('train-cardio').innerHTML = `
+    <div style="background:rgba(${rgb},.1);border:1px solid rgba(${rgb},.25);border-radius:10px;padding:12px 13px;display:flex;gap:11px;align-items:flex-start;cursor:pointer" onclick="toggleTrainCheck('cardio')">
+      <div class="cb ${cc?'chk-'+td.color[0]:''}"></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--${td.color});margin-bottom:3px">${td.type==='HIIT'?'⚡ HIIT':'🏃 Cardio leve'}</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">${td.cardio}</div></div>
+    </div>`;
+
+  // Prog rule
+  document.getElementById('prog-rule-text').textContent = wp.note;
+
+  // Exercises
+  let html = `<div class="sl">Exercícios — ${td.label} · Apenas máquinas</div>`;
+  td.exercises.forEach((ex,i)=>{
+    const ck = !!checks['e'+i];
+    const effSets = getEffectiveSets(ex,wp);
+    const effRest = getEffectiveRest(ex,wp);
+    const wHist = (weights[i]||[]).slice(-5);
+    const lastW = wHist.length?wHist[wHist.length-1].w+'kg':'—';
+    const maxW = wHist.length?Math.max(...wHist.map(h=>h.w)):0;
+    const barHTML = wHist.length>1?`<div class="w-chart">${wHist.map(h=>{
+      const hp=maxW>0?Math.round(h.w/maxW*100):5;
+      return `<div class="w-bar-wrap"><div class="w-bar" style="height:${hp}%"></div><div class="w-bar-label">${h.w}</div></div>`;
+    }).join('')}</div>`:'';
+    const isCompChanged = ex.type==='comp'&&wp.compSets==='+1';
+    html += `<div class="ex-row">
+      <div class="ex-hdr">
+        <div class="cb ${ck?'chk-'+td.color[0]:''}" onclick="toggleTrainCheck('e${i}')"></div>
+        <div style="flex:1">
+          <div class="ex-name${ck?' done':''}" onclick="toggleNote('en${activeTrainDay}_${i}')">${ex.name}${isCompChanged?'<span style="font-size:9px;color:var(--amber);margin-left:5px">+1 série</span>':''}</div>
+          <div class="ex-tags">
+            <span class="tag" style="background:rgba(${rgb},.12);border:1px solid rgba(${rgb},.3);color:var(--${td.color})">${effSets} séries</span>
+            <span class="tag" style="background:rgba(85,85,85,.1);border:1px solid rgba(85,85,85,.25);color:var(--muted)">${ex.reps} reps</span>
+            <span class="tag" style="background:rgba(46,46,46,.5);border:1px solid #2d2d2d;color:var(--dim)">↻ ${effRest}</span>
+          </div>
+          ${ex.note?`<span class="ex-toggle" onclick="toggleNote('en${activeTrainDay}_${i}')">▼ instrução</span>`:''}
+          ${ex.note?`<div class="ex-note" id="en${activeTrainDay}_${i}" style="background:rgba(${rgb},.08);border:1px solid rgba(${rgb},.2)">${ex.note}</div>`:''}
+          <div class="w-row">
+            <span class="w-hist">Carga:</span>
+            <input class="w-inp" id="wi${i}" type="number" placeholder="${lastW}" onchange="saveWeight(${i},this.value)">
+            <span class="w-hist">Último: ${lastW}</span>
+          </div>
+          ${barHTML}
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('train-ex').innerHTML = html;
+}
+
+function toggleTrainCheck(key){
+  const dateKey = new Date().toISOString().slice(0,10);
+  const sk = `tc_${activeTrainDay}_${dateKey}`;
+  const c = load(sk,{});
+  c[key]=!c[key];
+  save(sk,c);
+  renderTraining();
+}
+
+function saveWeight(exIdx,val){
+  if(!val||isNaN(val)) return;
+  const w = load(`tw_${activeTrainDay}`,[]);
+  if(!w[exIdx]) w[exIdx]=[];
+  const today = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  const last = w[exIdx][w[exIdx].length-1];
+  if(last&&last.d===today) last.w=parseFloat(val);
+  else w[exIdx].push({d:today,w:parseFloat(val)});
+  if(w[exIdx].length>8) w[exIdx].shift();
+  save(`tw_${activeTrainDay}`,w);
+}
+
+function toggleNote(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const open = el.classList.toggle('open');
+  const tog = el.previousElementSibling;
+  if(tog&&tog.classList.contains('ex-toggle')) tog.textContent=open?'▲ fechar':'▼ instrução';
+}
+
+// ════════════════════════════════════════════════ DIET
+
+let activeDietDay = 0;
+
+function buildDietTabs(){
+  const tabs = document.getElementById('diet-tabs');
+  tabs.innerHTML = '';
+  const actClasses = ['act-r','act-r','act-r','act-r','act-a','act-a','act-g'];
+  DIET_DAYS.forEach((d,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'day-tab'+(i===activeDietDay?' '+actClasses[i]:'');
+    btn.textContent = d.day;
+    btn.onclick=()=>{activeDietDay=i;renderDiet();};
+    tabs.appendChild(btn);
+  });
+}
+
+function renderDiet(){
+  buildDietTabs();
+  const dd = DIET_DAYS[activeDietDay];
+  const dateKey = activeDietDay+'_'+new Date().toISOString().slice(0,10);
+  const checks = load(`dc_${dateKey}`,{});
+  const acMap = {treino:'red',livre:'amber',retomada:'green'};
+  const ac = acMap[dd.type]||'red';
+  const rgbMap = {red:'232,64,64',amber:'245,158,11',green:'16,185,129'};
+  const rgb = rgbMap[ac];
+  const isLivre = dd.type==='livre';
+  const totalKcal = dd.meals.reduce((s,m)=>s+(m.kcal||0),0);
+  const totalPtn = dd.meals.reduce((s,m)=>s+(m.ptn||0),0);
+  const mDone = dd.meals.filter((_,i)=>checks['m'+i]).length;
+
+  // Note
+  let noteHTML = dd.note?`<div style="background:rgba(${rgb},.08);border:1px solid rgba(${rgb},.2);border-left:3px solid var(--${ac});border-radius:10px;padding:10px 13px;font-size:12px;color:var(--muted);line-height:1.5">${dd.note}</div>`:'';
+
+  // Macros
+  let macroHTML = '';
+  if(!isLivre){
+    const kp=Math.min(100,Math.round(totalKcal/2250*100));
+    const pp=Math.min(100,Math.round(totalPtn/155*100));
+    macroHTML=`<div class="card">
+      <div class="sl">Macros · ${mDone}/${dd.meals.length} refeições</div>
+      <div class="prog-wrap"><div class="prog-head"><span>Calorias</span><span style="color:${kp>=85?'var(--amber)':'var(--muted)'}">${totalKcal} / 2250</span></div><div class="prog-track"><div class="prog-fill" style="width:${kp}%;background:var(--amber)"></div></div></div>
+      <div class="prog-wrap" style="margin-bottom:0"><div class="prog-head"><span>Proteína</span><span style="color:${pp>=85?'var(--green)':'var(--muted)'}">${totalPtn}g / 155g</span></div><div class="prog-track"><div class="prog-fill" style="width:${pp}%;background:var(--green)"></div></div></div>
+    </div>`;
+  }
+
+  // Meals
+  const mealsHTML = dd.meals.map((m,i)=>{
+    const ck=!!checks['m'+i];
+    return `<div class="meal-row${ck?' done':''}">
+      <div class="meal-hdr" onclick="toggleMeal(${i})">
+        <div class="cb ${ck?'chk-'+ac[0]:''}" onclick="event.stopPropagation();toggleDietCheck('m${i}')"></div>
+        <div class="meal-time">${m.time}</div>
+        <div class="meal-name${ck?' done':''}">${m.name}</div>
+        ${m.kcal?`<div><div class="meal-kcal">${m.kcal} kcal</div><div class="meal-ptn">${m.ptn}g ptn</div></div>`:`<span class="tag" style="background:rgba(${rgb},.1);border:1px solid rgba(${rgb},.25);color:var(--${ac})">livre</span>`}
+        <div style="font-size:10px;color:var(--muted);margin-left:4px" id="ma${i}">▼</div>
+      </div>
+      <div class="meal-body" id="mb${i}">
+        ${m.items.map(it=>`<div class="meal-item">${it}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('diet-macros').innerHTML = macroHTML;
+  document.getElementById('diet-meals').innerHTML = noteHTML + mealsHTML;
+  document.getElementById('diet-prep').innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--indigo);margin-bottom:4px">📦 Preparo</div><div style="font-size:12px;color:var(--muted);line-height:1.6">${dd.prep}</div>`;
+}
+
+function toggleMeal(i){
+  const b=document.getElementById('mb'+i);
+  const a=document.getElementById('ma'+i);
+  const open=b.classList.toggle('open');
+  if(a) a.textContent=open?'▲':'▼';
+}
+
+function toggleDietCheck(key){
+  const dateKey = activeDietDay+'_'+new Date().toISOString().slice(0,10);
+  const c=load(`dc_${dateKey}`,{});
+  c[key]=!c[key];
+  save(`dc_${dateKey}`,c);
+  renderDiet();
+}
+
+// ════════════════════════════════════════════════ HEALTH
+
+let healthType = 'forca';
+
+function setHealthType(t){
+  healthType=t;
+  document.getElementById('h-type-forca').style.background = t==='forca'?'var(--red)':'';
+  document.getElementById('h-type-forca').style.color = t==='forca'?'#fff':'';
+  document.getElementById('h-type-cardio').style.background = t==='cardio'?'var(--blue)':'';
+  document.getElementById('h-type-cardio').style.color = t==='cardio'?'#fff':'';
+}
+
+function buildHealth(){
+  // Pre-load preset data if not already saved
+  const existing = load('health_hist',[]);
+  if(!existing.length){
+    save('health_hist', PRESET_HEALTH);
+  }
+  document.getElementById('h-date').value = new Date().toISOString().slice(0,10);
+  setHealthType('forca');
+  renderHealthList();
+}
+
+function saveHealth(){
+  const kcal=+document.getElementById('h-kcal').value||0;
+  const dur=+document.getElementById('h-dur').value||0;
+  const fcmax=+document.getElementById('h-fcmax').value||0;
+  const d=document.getElementById('h-date').value||new Date().toISOString().slice(0,10);
+  const note=document.getElementById('h-note').value;
+  if(!kcal&&!dur) return;
+  const hist=load('health_hist',[]);
+  hist.push({d,type:healthType,kcal,dur,fcmax,note});
+  hist.sort((a,b)=>a.d.localeCompare(b.d));
+  if(hist.length>60) hist.shift();
+  save('health_hist',hist);
+  ['h-kcal','h-dur','h-fcmax','h-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('h-date').value=new Date().toISOString().slice(0,10);
+  renderHealthList();
+}
+
+function renderHealthList(){
+  const hist = load('health_hist',[]);
+  if(!hist.length) return;
+  document.getElementById('health-summary').style.display='block';
+  document.getElementById('health-charts').style.display='block';
+  document.getElementById('health-stats').style.display='block';
+
+  // Group by date, show last 14 entries
+  const recent = [...hist].reverse().slice(0,14);
+  const grouped = {};
+  recent.forEach(h=>{ if(!grouped[h.d]) grouped[h.d]=[]; grouped[h.d].push(h); });
+
+  document.getElementById('health-list').innerHTML = Object.entries(grouped).map(([d,entries])=>`
+    <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">${d}</div>
+      ${entries.map(h=>`
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:10px;color:${h.type==='forca'?'var(--red)':'var(--blue)'};font-weight:700">${h.type==='forca'?'💪 Força':'🏃 Cardio'}</span>
+          ${h.kcal?`<span class="tag" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:var(--amber)">${h.kcal} kcal</span>`:''}
+          ${h.dur?`<span class="tag" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:var(--blue)">${h.dur} min</span>`:''}
+          ${h.fcmax?`<span class="tag" style="background:rgba(232,64,64,.1);border:1px solid rgba(232,64,64,.25);color:var(--red)">FC máx ${h.fcmax}</span>`:''}
+          ${h.note?`<span style="font-size:10px;color:var(--muted)">${h.note}</span>`:''}
+        </div>`).join('')}
+    </div>`).join('');
+
+  // Charts separated by type
+  const forca = hist.filter(h=>h.type==='forca').slice(-10);
+  const cardio = hist.filter(h=>h.type==='cardio').slice(-10);
+
+  function renderMiniChart(data, containerId, color){
+    const el = document.getElementById(containerId);
+    if(!data.length){ el.innerHTML='<div style="font-size:10px;color:var(--muted);padding:8px 0">Sem dados ainda.</div>'; return; }
+    const max = Math.max(...data.map(h=>h.kcal));
+    el.innerHTML = data.map(h=>{
+      const pct = max>0?Math.round(h.kcal/max*100):5;
+      return `<div class="h-bar-w">
+        <div class="h-bar-val" style="color:${color}">${h.kcal}</div>
+        <div class="h-bar" style="height:${pct}%;background:${color}40"></div>
+        <div class="h-bar-lbl">${h.d.slice(5)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  renderMiniChart(forca,'chart-forca','var(--red)');
+  renderMiniChart(cardio,'chart-cardio','var(--blue)');
+
+  // Averages
+  const allKcal = hist.map(h=>h.kcal).filter(Boolean);
+  const allDur = hist.map(h=>h.dur).filter(Boolean);
+  const allFc = hist.map(h=>h.fcmax).filter(Boolean);
+  const avg = arr => arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):0;
+  document.getElementById('health-avg').innerHTML = `
+    <div class="stat-box"><div class="stat-val" style="color:var(--amber)">${avg(allKcal)}</div><div class="stat-lbl">kcal médias</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--blue)">${avg(allDur)}</div><div class="stat-lbl">min médios</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--red)">${avg(allFc)}</div><div class="stat-lbl">FC máx média</div></div>`;
+}
+
+// ════════════════════════════════════════════════ CONV
+
+function showConv(tab, el){
+  ['carb','ptn','social'].forEach(t=>document.getElementById('conv-'+t).style.display=t===tab?'block':'none');
+  document.querySelectorAll('.conv-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ════════════════════════════════════════════════ INIT
+
+buildOverview();
+buildTrainTabs();
+renderTraining();
+buildDietTabs();
+renderDiet();
+buildHealth();
+</script>
+</body>
+</html>
